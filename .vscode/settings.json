@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    "mqtt.h": "c",
+    "string.h": "c",
+    "stm32f4xx_hal.h": "c",
+    "stdlib.h": "c",
+    "mqtt_packet.h": "c",
+    "algorithm": "c"
+  }
+}
