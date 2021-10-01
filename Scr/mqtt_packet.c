@@ -22,7 +22,7 @@ MQTT_Packet MQTT_Packet_New(MQTT_PacketType packetType, uint8_t *buffer)
 }
 
 
-uint8_t* MQTT_Packet_Buffer(MQTT_Packet *packet)
+uint8_t* MQTT_Packet_Generate(MQTT_Packet *packet)
 {
   uint8_t sizeOflen;
   uint8_t *buffer;

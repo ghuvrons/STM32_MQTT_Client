@@ -104,13 +104,11 @@ void MQTT_Connect(MQTT_Client *mqttClient, const char *id)
     );
   }
 
-  packetBuffer = MQTT_Packet_Buffer(&packet);
+  packetBuffer = MQTT_Packet_Generate(&packet);
 
   DBG_Log((uint8_t*) "Connect Buffer", 14);
-
   DBG_Log(packetBuffer, packet.bufferLen);
 
   MQTT_PacketSend(mqttClient, packetBuffer, packet.bufferLen);
-
   MQTT_UnlockCMD(mqttClient);
 }
