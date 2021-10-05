@@ -22,34 +22,6 @@ MQTT_Packet MQTT_Packet_New(MQTT_PacketType packetType, uint8_t *buffer)
 }
 
 
-uint8_t* MQTT_Packet_Generate(MQTT_Packet *packet)
-{
-  uint8_t sizeOflen;
-  uint8_t *buffer;
-
-  buffer = packet->buffer + 5;              // 1 byte packet type + 4 bytes length
-  packet->bufferPtr = packet->buffer + 1;
-
-  sizeOflen = MQTT_Packet_AddVarInt(packet, packet->length);
-  packet->bufferLen = packet->length+1;
-  packet->length -= sizeOflen;
-  
-  if(sizeOflen < 4)
-  {
-    sizeOflen++; // add 1 byte for packet type
-    
-    // shift to right (packet type and length)
-    while((sizeOflen)){
-      sizeOflen--;
-      packet->bufferPtr--;
-      buffer--;
-      *buffer = *(packet->bufferPtr);
-    }
-  }
-  return buffer;
-}
-
-
 uint8_t MQTT_Packet_AddInt8(MQTT_Packet *packet, int8_t data)
 {
   *(packet->bufferPtr) = data;
@@ -234,3 +206,41 @@ void MQTT_Packet_AddProperties(
   }
 }
 
+
+uint8_t* MQTT_Packet_Encode(MQTT_Packet *packet)
+{
+  uint8_t sizeOflen;
+  uint8_t *buffer;
+
+  buffer = packet->buffer + 5;              // 1 byte packet type + 4 bytes length
+  packet->bufferPtr = packet->buffer + 1;
+
+  sizeOflen = MQTT_Packet_AddVarInt(packet, packet->length);
+  packet->bufferLen = packet->length+1;
+  packet->length -= sizeOflen;
+  
+  if(sizeOflen < 4)
+  {
+    sizeOflen++; // add 1 byte for packet type
+    
+    // shift to right (packet type and length)
+    while((sizeOflen)){
+      sizeOflen--;
+      packet->bufferPtr--;
+      buffer--;
+      *buffer = *(packet->bufferPtr);
+    }
+  }
+  return buffer;
+}
+
+
+MQTT_Packet MQTT_Packet_Decode(uint8_t *buffer, uint16_t length)
+{
+  printf("Decoding Packet");
+  DBG_PrintB(buffer, length);
+
+  MQTT_Packet packet;
+  memset((void *) &(packet), 0, sizeof(MQTT_Packet));         // 1 byte packet type + 4 bytes length
+  return packet;
+}

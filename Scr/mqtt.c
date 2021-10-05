@@ -37,6 +37,13 @@ __weak void MQTT_UnlockCMD(MQTT_Client *mqttClient)
 }
 
 
+__weak void MQTT_WaitResponse(MQTT_Client *mqttClient)
+{
+  while(!MQTT_IS_STATUS(mqttClient, MQTT_STAT_RECEIVE_IT));
+  MQTT_UNSET_STATUS(mqttClient, MQTT_STAT_RECEIVE_IT);
+}
+
+
 void MQTT_SetAuth(MQTT_Client *mqttClient, const char *username, const char *password)
 {
   uint16_t i;
@@ -104,11 +111,35 @@ void MQTT_Connect(MQTT_Client *mqttClient, const char *id)
     );
   }
 
-  packetBuffer = MQTT_Packet_Generate(&packet);
+  packetBuffer = MQTT_Packet_Encode(&packet);
+  MQTT_PacketSend(mqttClient, packetBuffer, packet.bufferLen);
+  MQTT_WaitResponse(mqttClient);
+  MQTT_Packet_Decode(mqttClient->rxBuffer, mqttClient->rxBufferLen);
+  MQTT_UnlockCMD(mqttClient);
+}
 
-  DBG_Log((uint8_t*) "Connect Buffer", 14);
-  DBG_Log(packetBuffer, packet.bufferLen);
 
+void MQTT_Publish(MQTT_Client *mqttClient, const char *topic, uint8_t QoS)
+{
+  MQTT_Packet packet;
+  uint8_t *packetBuffer;
+
+  MQTT_LockCMD(mqttClient);
+
+  packet = MQTT_Packet_New(MQTT_PACKET_TYPE_PUBLISH, mqttClient->txBuffer);
+  packet.type |= (QoS & 0x03) << 1;
+
+  /**
+   * Variable Header
+   * 1. topic
+   * 2. packet ID
+   * 3. propperties
+   */
+  MQTT_Packet_AddBytes(&packet, (const uint8_t *) topic, strlen(topic));
+
+
+
+  packetBuffer = MQTT_Packet_Encode(&packet);
   MQTT_PacketSend(mqttClient, packetBuffer, packet.bufferLen);
   MQTT_UnlockCMD(mqttClient);
 }

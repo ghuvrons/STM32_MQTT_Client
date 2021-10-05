@@ -63,7 +63,6 @@ typedef struct {
 } MQTT_Packet;
 
 MQTT_Packet MQTT_Packet_New(MQTT_PacketType, uint8_t *buffer);
-uint8_t *MQTT_Packet_Generate(MQTT_Packet*);
 uint8_t MQTT_Packet_AddInt8(MQTT_Packet*, int8_t);
 uint8_t MQTT_Packet_AddInt16(MQTT_Packet*, int16_t);
 uint8_t MQTT_Packet_AddInt32(MQTT_Packet*, int32_t);
@@ -75,5 +74,7 @@ void MQTT_Packet_AddProperties(
     MQTT_Packet*, MQTT_PacketPropType, 
     const uint8_t *data, uint16_t length
 );
+uint8_t *MQTT_Packet_Encode(MQTT_Packet*);
+MQTT_Packet MQTT_Packet_Decode(uint8_t*, uint16_t length);
 
 #endif /* MQTT_CLIENT_INC_MQTT_PACKET_H_ */
