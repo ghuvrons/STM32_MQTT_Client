@@ -13,6 +13,11 @@
 
 #include "debugger.h"
 
+
+static void processPacket(MQTT_Client*, MQTT_Packet*);
+static void processPacketConnack(MQTT_Client*, MQTT_Packet*);
+
+
 __weak void MQTT_PacketSend(MQTT_Client *packet, uint8_t *data, uint16_t size)
 {
   return;
@@ -67,6 +72,7 @@ void MQTT_SetAuth(MQTT_Client *mqttClient, const char *username, const char *pas
 void MQTT_Connect(MQTT_Client *mqttClient, const char *id)
 {
   MQTT_Packet packet;
+  MQTT_Packet respPacket;
   uint8_t *packetBuffer;
   uint8_t cFlag;
 
@@ -77,35 +83,35 @@ void MQTT_Connect(MQTT_Client *mqttClient, const char *id)
   if(mqttClient->auth.password[0] != 0) cFlag |= 0x40;
 
   packet = MQTT_Packet_New(MQTT_PACKET_TYPE_CONNECT, mqttClient->txBuffer);
-  MQTT_Packet_AddBytes(&packet, (uint8_t *) "MQTT", 4);
-  MQTT_Packet_AddInt8(&packet, MQTT_PROTOCOL_VERSION);
-  MQTT_Packet_AddInt8(&packet, cFlag);
-  MQTT_Packet_AddInt16(&packet, mqttClient->options.keepAlive);
+  MQTT_Packet_WriteBytes(&packet, (uint8_t *) "MQTT", 4);
+  MQTT_Packet_WriteInt8(&packet, MQTT_PROTOCOL_VERSION);
+  MQTT_Packet_WriteInt8(&packet, cFlag);
+  MQTT_Packet_WriteInt16(&packet, mqttClient->options.keepAlive);
 
   // Properties
-  MQTT_Packet_StartAddProperties(&packet);
+  MQTT_Packet_StartWriteProperties(&packet);
   {
     if(mqttClient->options.sessionExpInterval){
-      MQTT_Packet_AddProperties(&packet, 
+      MQTT_Packet_WriteProperties(&packet, 
         MQTT_PROP_SESS_EXP_INTV, 
         (uint8_t *) &(mqttClient->options.sessionExpInterval), 1
       );
     }
   }
-  MQTT_Packet_StopAddProperties(&packet);
+  MQTT_Packet_StopWriteProperties(&packet);
   
   // Payload
-  MQTT_Packet_AddBytes(&packet, (const uint8_t *) id, strlen(id));
+  MQTT_Packet_WriteBytes(&packet, (const uint8_t *) id, strlen(id));
 
   if(mqttClient->auth.username[0] != 0){
-    MQTT_Packet_AddBytes(&packet,
+    MQTT_Packet_WriteBytes(&packet,
       (uint8_t *) mqttClient->auth.username,
       strlen(mqttClient->auth.username)
     );
   }
 
   if(mqttClient->auth.password[0] != 0){
-    MQTT_Packet_AddBytes(&packet,
+    MQTT_Packet_WriteBytes(&packet,
       (uint8_t *) mqttClient->auth.password,
       strlen(mqttClient->auth.password)
     );
@@ -114,7 +120,7 @@ void MQTT_Connect(MQTT_Client *mqttClient, const char *id)
   packetBuffer = MQTT_Packet_Encode(&packet);
   MQTT_PacketSend(mqttClient, packetBuffer, packet.bufferLen);
   MQTT_WaitResponse(mqttClient);
-  MQTT_Packet_Decode(mqttClient->rxBuffer, mqttClient->rxBufferLen);
+  respPacket = MQTT_Packet_Decode(mqttClient->rxBuffer, mqttClient->rxBufferLen);
   MQTT_UnlockCMD(mqttClient);
 }
 
@@ -135,11 +141,35 @@ void MQTT_Publish(MQTT_Client *mqttClient, const char *topic, uint8_t QoS)
    * 2. packet ID
    * 3. propperties
    */
-  MQTT_Packet_AddBytes(&packet, (const uint8_t *) topic, strlen(topic));
+  MQTT_Packet_WriteBytes(&packet, (const uint8_t *) topic, strlen(topic));
 
 
 
   packetBuffer = MQTT_Packet_Encode(&packet);
   MQTT_PacketSend(mqttClient, packetBuffer, packet.bufferLen);
   MQTT_UnlockCMD(mqttClient);
+}
+
+
+static void processPacket(MQTT_Client *mqttClient, MQTT_Packet *packet)
+{
+  MQTT_PacketType pType;
+
+  pType = packet->type & 0xF0;
+
+  switch (pType)
+  {
+  case MQTT_PACKET_TYPE_CONNACK:
+    processPacketConnack(mqttClient, packet);
+    break;
+  
+  default:
+    break;
+  }
+}
+
+
+static void processPacketConnack(MQTT_Client *mqttClient, MQTT_Packet *packet)
+{
+  
 }

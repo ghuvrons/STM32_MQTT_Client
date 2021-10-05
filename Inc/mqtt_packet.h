@@ -49,6 +49,9 @@
 #define MQTT_PROP_SHARED_SUBSCR_AV      0x2A
 
 
+#define MQTT_PACKET_IS(pck, pckType) (((pck)->type & 0xF0) == (pckType))
+
+
 typedef uint8_t MQTT_PacketType;
 typedef uint8_t MQTT_PacketPropType;
 
@@ -63,14 +66,14 @@ typedef struct {
 } MQTT_Packet;
 
 MQTT_Packet MQTT_Packet_New(MQTT_PacketType, uint8_t *buffer);
-uint8_t MQTT_Packet_AddInt8(MQTT_Packet*, int8_t);
-uint8_t MQTT_Packet_AddInt16(MQTT_Packet*, int16_t);
-uint8_t MQTT_Packet_AddInt32(MQTT_Packet*, int32_t);
-uint8_t MQTT_Packet_AddVarInt(MQTT_Packet*, int);
-uint16_t MQTT_Packet_AddBytes(MQTT_Packet*, const uint8_t*, uint16_t length);
-void MQTT_Packet_StartAddProperties(MQTT_Packet*);
-void MQTT_Packet_StopAddProperties(MQTT_Packet*);
-void MQTT_Packet_AddProperties(
+uint8_t MQTT_Packet_WriteInt8(MQTT_Packet*, int8_t);
+uint8_t MQTT_Packet_WriteInt16(MQTT_Packet*, int16_t);
+uint8_t MQTT_Packet_WriteInt32(MQTT_Packet*, int32_t);
+uint8_t MQTT_Packet_WriteVarInt(MQTT_Packet*, int);
+uint16_t MQTT_Packet_WriteBytes(MQTT_Packet*, const uint8_t*, uint16_t length);
+void MQTT_Packet_StartWriteProperties(MQTT_Packet*);
+void MQTT_Packet_StopWriteProperties(MQTT_Packet*);
+void MQTT_Packet_WriteProperties(
     MQTT_Packet*, MQTT_PacketPropType, 
     const uint8_t *data, uint16_t length
 );

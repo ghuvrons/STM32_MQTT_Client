@@ -22,7 +22,7 @@ MQTT_Packet MQTT_Packet_New(MQTT_PacketType packetType, uint8_t *buffer)
 }
 
 
-uint8_t MQTT_Packet_AddInt8(MQTT_Packet *packet, int8_t data)
+uint8_t MQTT_Packet_WriteInt8(MQTT_Packet *packet, int8_t data)
 {
   *(packet->bufferPtr) = data;
   packet->bufferPtr++;
@@ -32,7 +32,7 @@ uint8_t MQTT_Packet_AddInt8(MQTT_Packet *packet, int8_t data)
 }
 
 
-uint8_t MQTT_Packet_AddInt16(MQTT_Packet *packet, int16_t data)
+uint8_t MQTT_Packet_WriteInt16(MQTT_Packet *packet, int16_t data)
 {
   // data save to buffer in big endian
   packet->bufferPtr += 2;
@@ -49,7 +49,7 @@ uint8_t MQTT_Packet_AddInt16(MQTT_Packet *packet, int16_t data)
 }
 
 
-uint8_t MQTT_Packet_AddInt32(MQTT_Packet *packet, int32_t data)
+uint8_t MQTT_Packet_WriteInt32(MQTT_Packet *packet, int32_t data)
 {
   // data save to buffer in big endian
   packet->bufferPtr += 4;
@@ -66,7 +66,7 @@ uint8_t MQTT_Packet_AddInt32(MQTT_Packet *packet, int32_t data)
 }
 
 
-uint8_t MQTT_Packet_AddVarInt(MQTT_Packet *packet, int data)
+uint8_t MQTT_Packet_WriteVarInt(MQTT_Packet *packet, int data)
 {
   uint8_t result;
   uint8_t tmp[4];
@@ -96,11 +96,11 @@ uint8_t MQTT_Packet_AddVarInt(MQTT_Packet *packet, int data)
 }
 
 
-uint16_t MQTT_Packet_AddBytes(MQTT_Packet *packet, const uint8_t *data, uint16_t length)
+uint16_t MQTT_Packet_WriteBytes(MQTT_Packet *packet, const uint8_t *data, uint16_t length)
 {
   uint16_t result;
 
-  result = MQTT_Packet_AddInt16(packet, (int16_t)length);
+  result = MQTT_Packet_WriteInt16(packet, (int16_t)length);
 
   for (uint16_t i = 0; i < length; i++)
   {
@@ -115,14 +115,14 @@ uint16_t MQTT_Packet_AddBytes(MQTT_Packet *packet, const uint8_t *data, uint16_t
 }
 
 
-void MQTT_Packet_StartAddProperties(MQTT_Packet *packet)
+void MQTT_Packet_StartWriteProperties(MQTT_Packet *packet)
 {
   packet->tmpPropLen = 0;
   packet->bufferPtr += 4;     // set free space for length of properties
 }
 
 
-void MQTT_Packet_StopAddProperties(MQTT_Packet *packet)
+void MQTT_Packet_StopWriteProperties(MQTT_Packet *packet)
 {
   uint8_t sizeOflen;
   uint8_t *tmpPropPtr;
@@ -131,7 +131,7 @@ void MQTT_Packet_StopAddProperties(MQTT_Packet *packet)
   // pointer of properties
   tmpPropPtr = packet->bufferPtr + 4;
 
-  sizeOflen = MQTT_Packet_AddVarInt(packet, packet->tmpPropLen);
+  sizeOflen = MQTT_Packet_WriteVarInt(packet, packet->tmpPropLen);
   if(sizeOflen < 4)
   {
     for (uint16_t i = 0; i < packet->tmpPropLen; i++)
@@ -144,12 +144,12 @@ void MQTT_Packet_StopAddProperties(MQTT_Packet *packet)
 }
 
 
-void MQTT_Packet_AddProperties(
+void MQTT_Packet_WriteProperties(
     MQTT_Packet *packet, 
     MQTT_PacketPropType propType, 
     const uint8_t *data, uint16_t length
 ){
-  MQTT_Packet_AddInt8(packet, propType);
+  MQTT_Packet_WriteInt8(packet, propType);
   packet->tmpPropLen++;
 
   switch (propType)
@@ -163,7 +163,7 @@ void MQTT_Packet_AddProperties(
   case MQTT_PROP_SUBSCR_ID_AV:
   case MQTT_PROP_SHARED_SUBSCR_AV:
     // byte
-    packet->tmpPropLen += MQTT_Packet_AddInt8(packet, *data);
+    packet->tmpPropLen += MQTT_Packet_WriteInt8(packet, *data);
     break;
 
   case MQTT_PROP_SVR_KEEP_ALIVE:
@@ -171,7 +171,7 @@ void MQTT_Packet_AddProperties(
   case MQTT_PROP_TOPIC_ALIAS_MAX:
   case MQTT_PROP_TOPIC_ALIAS:
     // two bytes
-    packet->tmpPropLen += MQTT_Packet_AddInt16(packet, *((int16_t *)data));
+    packet->tmpPropLen += MQTT_Packet_WriteInt16(packet, *((int16_t *)data));
     break;
 
   case MQTT_PROP_MSG_EXP_INTV:
@@ -179,12 +179,12 @@ void MQTT_Packet_AddProperties(
   case MQTT_PROP_WILL_DELAY_INTV:
   case MQTT_PROP_MAX_PACKET_SZ:
     // four bytes
-    packet->tmpPropLen += MQTT_Packet_AddInt32(packet, *((int32_t *)data));
+    packet->tmpPropLen += MQTT_Packet_WriteInt32(packet, *((int32_t *)data));
     break;
 
   case MQTT_PROP_SUBSCR_ID:
     // var integer
-    packet->tmpPropLen += MQTT_Packet_AddVarInt(packet, *((int *)data));
+    packet->tmpPropLen += MQTT_Packet_WriteVarInt(packet, *((int *)data));
     break;
 
   case MQTT_PROP_CONTENT_TYPE:
@@ -198,7 +198,7 @@ void MQTT_Packet_AddProperties(
   case MQTT_PROP_REASON_STR:
   case MQTT_PROP_USER_PROP:
     // n bytes
-    packet->tmpPropLen += MQTT_Packet_AddBytes(packet, data, length);
+    packet->tmpPropLen += MQTT_Packet_WriteBytes(packet, data, length);
     break;
 
   default:
@@ -215,7 +215,7 @@ uint8_t* MQTT_Packet_Encode(MQTT_Packet *packet)
   buffer = packet->buffer + 5;              // 1 byte packet type + 4 bytes length
   packet->bufferPtr = packet->buffer + 1;
 
-  sizeOflen = MQTT_Packet_AddVarInt(packet, packet->length);
+  sizeOflen = MQTT_Packet_WriteVarInt(packet, packet->length);
   packet->bufferLen = packet->length+1;
   packet->length -= sizeOflen;
   
