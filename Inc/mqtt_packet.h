@@ -77,6 +77,13 @@ void MQTT_Packet_WriteProperties(
     MQTT_Packet*, MQTT_PacketPropType, 
     const uint8_t *data, uint16_t length
 );
+
+int8_t MQTT_Packet_ReadInt8(MQTT_Packet*);
+int16_t MQTT_Packet_ReadInt16(MQTT_Packet*);
+int32_t MQTT_Packet_ReadInt32(MQTT_Packet*);
+int MQTT_Packet_ReadVarInt(MQTT_Packet*);
+uint16_t MQTT_Packet_ReadBytes(MQTT_Packet*, uint8_t*);
+
 uint8_t *MQTT_Packet_Encode(MQTT_Packet*);
 MQTT_Packet MQTT_Packet_Decode(uint8_t*, uint16_t length);
 

@@ -39,7 +39,7 @@ uint8_t MQTT_Packet_WriteInt16(MQTT_Packet *packet, int16_t data)
   for (uint8_t i = 0; i < 2; i++)
   {
     packet->bufferPtr--;
-    *(packet->bufferPtr) = data & 0xFF;
+    *(packet->bufferPtr) = data & 0xFFU;
     data >>= 8;
   }
   packet->bufferPtr += 2;
@@ -56,7 +56,7 @@ uint8_t MQTT_Packet_WriteInt32(MQTT_Packet *packet, int32_t data)
   for (uint8_t i = 0; i < 4; i++)
   {
     packet->bufferPtr--;
-    *(packet->bufferPtr) = data & 0xFF;
+    *(packet->bufferPtr) = data & 0xFFU;
     data >>= 8;
   }
   packet->bufferPtr += 4;
@@ -204,6 +204,72 @@ void MQTT_Packet_WriteProperties(
   default:
     break;
   }
+}
+
+
+int8_t MQTT_Packet_ReadInt8(MQTT_Packet *packet)
+{
+  int8_t data;
+  
+  data = *(packet->bufferPtr);
+  packet->bufferPtr++;
+  return data;
+}
+
+
+int16_t MQTT_Packet_ReadInt16(MQTT_Packet *packet)
+{
+  int16_t data = 0;
+
+  for (int8_t i = 0; i < 2; i++)
+  {
+    data <<= 8;
+    data |= (*(packet->bufferPtr) & 0xFFU);
+    packet->bufferPtr++;
+  }
+  return data;
+}
+
+
+int32_t MQTT_Packet_ReadInt32(MQTT_Packet *packet)
+{
+  int32_t data = 0;
+
+  for (int8_t i = 0; i < 4; i++)
+  {
+    data <<= 8;
+    data |= (*(packet->bufferPtr) & 0xFFU);
+    packet->bufferPtr++;
+  }
+  return data;
+}
+
+
+int MQTT_Packet_ReadVarInt(MQTT_Packet *packet)
+{
+  unsigned int data = 0;
+  unsigned int multiplier = 1;
+  unsigned int maxMultiplier = 128*128*128;
+  unsigned int encodedByte;
+  
+  do {
+    encodedByte = (unsigned int) *(packet->bufferPtr);
+    data += (encodedByte & 127) * multiplier;
+    if (multiplier > maxMultiplier){
+      break;
+    }
+    multiplier *= 128
+  } while((encodedByte & 128));
+  return (int) data;
+}
+
+
+uint16_t MQTT_Packet_ReadBytes(MQTT_Packet *packet, uint8_t *buf)
+{
+  uint16_t byteLen = (uint16_t) MQTT_Packet_ReadInt16(packet);
+  buf = packet->bufferPtr;
+  packet->bufferPtr += byteLen;
+  return byteLen;
 }
 
 
