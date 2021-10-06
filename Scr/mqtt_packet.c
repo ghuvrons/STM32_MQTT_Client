@@ -8,8 +8,7 @@
 #include "mqtt_packet.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include "debugger.h"
+
 
 MQTT_Packet MQTT_Packet_New(MQTT_PacketType packetType, uint8_t *buffer)
 {
@@ -258,7 +257,7 @@ int MQTT_Packet_ReadVarInt(MQTT_Packet *packet)
     if (multiplier > maxMultiplier){
       break;
     }
-    multiplier *= 128
+    multiplier *= 128;
   } while((encodedByte & 128));
   return (int) data;
 }
@@ -303,9 +302,6 @@ uint8_t* MQTT_Packet_Encode(MQTT_Packet *packet)
 
 MQTT_Packet MQTT_Packet_Decode(uint8_t *buffer, uint16_t length)
 {
-  printf("Decoding Packet");
-  DBG_PrintB(buffer, length);
-
   MQTT_Packet packet;
   memset((void *) &(packet), 0, sizeof(MQTT_Packet));         // 1 byte packet type + 4 bytes length
   return packet;

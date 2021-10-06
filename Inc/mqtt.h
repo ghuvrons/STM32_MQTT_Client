@@ -44,6 +44,7 @@ typedef struct {
   struct {
     uint16_t keepAlive;
     uint32_t sessionExpInterval;
+    uint16_t maxPacketSize;
   } options;
 
   struct {

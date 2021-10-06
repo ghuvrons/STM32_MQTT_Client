@@ -99,7 +99,7 @@ void MQTT_Connect(MQTT_Client *mqttClient, const char *id)
     }
   }
   MQTT_Packet_StopWriteProperties(&packet);
-  
+
   // Payload
   MQTT_Packet_WriteBytes(&packet, (const uint8_t *) id, strlen(id));
 
@@ -121,6 +121,7 @@ void MQTT_Connect(MQTT_Client *mqttClient, const char *id)
   MQTT_PacketSend(mqttClient, packetBuffer, packet.bufferLen);
   MQTT_WaitResponse(mqttClient);
   respPacket = MQTT_Packet_Decode(mqttClient->rxBuffer, mqttClient->rxBufferLen);
+
   MQTT_UnlockCMD(mqttClient);
 }
 
